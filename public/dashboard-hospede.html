@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="pt-br">
+
+<head>
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="css/dashboard-hospede.css" />
+
+</head>
+
+<body onload="atualizarInfo()">
+
+  <div class="grid_container">
+
+    <header class="cabecalho">
+
+      <ul class="navbar">
+
+        <li>Quarto Nº: 126</li>
+
+        <a href=""><img src="img/logo.svg" /></a>
+
+        <li>Seja bem vindo(a)!</li>
+
+      </ul>
+
+
+      <!-- <ul class="navbar">
+          
+          <a href=""><li>Sobre nós</li></a>
+          <a href=""><li>Fale conosco</li></a>
+          
+        </ul> -->
+
+
+    </header>
+
+    <div class="titulos_metricas">
+      <span id="temperatura">Temperatura</span>
+      <span id="umidade">Umidade</span>
+    </div>
+
+    <div class="container_metricas">
+
+      <div class="container-metricas-temperaturas">
+        <div id="alerta_temperatura_baixa">
+          <span>Abaixo 20Cº</span>
+        </div>
+        <div id="alerta_temperatura_ideal">
+          <span>Acima 20Cº até 25Cº</span>
+        </div>
+        <div id="alerta_temperatura_alta">
+          <span>Acima de 25Cº</span>
+        </div>
+      </div>
+
+      <div class="container-metricas-umidades">
+        <div id="alerta_umidade_baixa">
+          <span>Abaixo de 30%</span>
+        </div>
+        <div id="alerta_umidade_ideal">
+          <span>Acima de 30% até 60%</span>
+        </div>
+        <div id="alerta_umidade_alta">
+          <span>Acima de 60%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="container_temperatura container" id="kpi_temp">
+
+      <h3 class="titulo_container">Temperatura</h3>
+      <p class="paragrafo_container" id="kpi_temp_info"> </p>
+      <span id="status_message_temp" </span>
+
+    </div>
+
+    <div class="container_umidade container" id="kpi_umid">
+
+      <h3 class="titulo_container">Umidade</h3>
+      <p class="paragrafo_container" id="kpi_umid_info"> 💧</p>
+      <span id="status_message_umid"></span>
+
+    </div>
+
+    <div class="container_proximidade container" id="kpi_prox">
+
+      <h3 class="titulo_container">Proximidade</h3>
+      <p class="paragrafo_container" id="kpi_prox_info"> 🪟</p>
+      <span id="status-message"></span>
+
+    </div>
+
+    <div class="container_alerta container" id="kpi_alerta">
+
+      <h3 class="titulo_container">Alerta</h3>
+      <p class="paragrafo_container" id="kpi_alerta_info"></p>
+      <span id="status_messagem_alerta"></span>
+
+    </div>
+
+  </div>
+
+</body>
+
+</html>
+
+<script>
+
+  let idQuarto = 1;
+
+  function atualizarInfo() {
+    fetch(`/medidas/tempo-real/${idQuarto}`, { cache: "no-store" })
+      .then(function (response) {
+        if (response.ok) {
+          response.json().then(function (resposta) {
+            console.log(`Dados recebidos: ${JSON.stringify(resposta)}`);
+
+            let statusTemperatura = 'ok';
+            let statusUmidade = 'ok';
+            let mensagemAlerta = 'Aqui entram os alertas';
+            let temp = resposta[0].temperatura;
+            let umidade = resposta[0].umidade;
+            let tempFora = resposta[0].temperaturaFora;
+            let umidFora = resposta[0].umidadeFora;
+
+            let limitesTemperatura = {
+              quente: 26,
+              ideal: 24,
+              frio: 23,
+            };
+
+            let limitesUmidade = {
+              acima: 61,
+              ideal: 30,
+              frio: 29,
+            };
+
+            /*-------------KPI TEMPERATURA------------------*/
+
+            kpi_temp_info.innerHTML = temp + 'ºC';
+            kpi_temp.className = '';
+
+            if (temp <= 20.5) {
+              status_message_temp.innerHTML = "Temperatura baixa 🌡️";
+              kpi_temp.className = 'container_temperatura container temperatura-baixa';
+              statusTemperatura = 'not ok'
+
+            } else if (temp > 20.5 && temp <= 25) {
+              status_message_temp.innerHTML = "Temperatura ideal 🌡️";
+              kpi_temp.className = 'container_temperatura container temperatura-ideal';
+              statusTemperatura = 'ok';
+            } else if (temp > 25) {
+              status_message_temp.innerHTML = 'Temperatura acima 🌡️';
+              kpi_temp.className = 'container_temperatura container temperatura-quente';
+              statusTemperatura = 'not ok';
+            }
+
+            /*---------------KPI UMIDADE------------*/
+
+            kpi_umid_info.innerHTML = resposta[0].umidade + '%';
+
+            if (umidade < 29) {
+              status_message_umid.innerHTML = 'Umidade baixa 💧';
+              kpi_umid.className = 'container_umidade container umidade-abaixo';
+              statusUmidade = 'not ok';
+            } else if (umidade >= 30 && umidade < 61) {
+              status_message_umid.innerHTML = 'Umidade ideal 💧';
+              kpi_umid.className = 'container_umidade container umidade-ideal';
+              statusUmidade = 'ok';
+            } else if (umidade >= 61) {
+              status_message_umid.innerHTML = 'Umidade acima 💧';
+              kpi_umid.className = 'container_umidade container umidade-alta';
+              statusUmidade = 'not ok';
+            }
+
+            /*----------------KPI JANELA----------------*/
+            let prox = resposta[0].janela;
+            if (prox == 0) {
+              kpi_prox_info.innerHTML = 'Janela aberta 🪟';
+              kpi_prox.className = 'container_proximidade container janela-aberta';
+            } else {
+              kpi_prox_info.innerHTML = 'Janela fechada 🪟';
+              kpi_prox.className = 'container_proximidade container janela-fechada';
+            }
+
+            /*---------- KPI ALERTA ----------*/
+
+            let classe_alerta = 'container_alerta container';
+
+            if (
+              temp >= 21 &&
+              temp <= 25
+
+            ) {
+              classe_alerta = "container_alerta container";
+              document.getElementById(`titulo_alerta_${idQuarto}`).innerHTML =
+                "";
+              document.getElementById(`kpi_alerta_info`).innerHTML =
+                "Sem alertas";
+              document.getElementById(`status_messagem_alerta`).innerHTML =
+                "Condições adequadas ✅";
+            } else if (tempFora >= 26 && temp <= 20 && prox == 0) {
+              classe_alerta = "container_alerta container alerta";
+              document.getElementById(`kpi_alerta_info`).innerHTML =
+                "Fechar janela e desligar ar-condicionado";
+              document.getElementById(`status_messagem_alerta`).innerHTML =
+                "Condições inadequadas 🚨";
+            } else if (tempFora >= 26 && temp <= 20 && prox == 1) {
+              classe_alerta = "container_alerta container alerta";
+              document.getElementById(`kpi_alerta_info`).innerHTML =
+                "Abrir janela ou desligar ar-condicionado";
+              document.getElementById(`status_messagem_alerta`).innerHTML =
+                "Condições inadequadas 🚨";
+            } else if (tempFora >= 26 && temp >= 26 && prox == 0) {
+              classe_alerta = "container_alerta container alerta";
+              document.getElementById(`kpi_alerta_info`).innerHTML =
+                "Fechar janela e ligar ar-condicionado";
+              document.getElementById(`status_messagem_alerta`).innerHTML =
+                "Condições inadequadas 🚨";
+            } else if (tempFora >= 26 && temp >= 26 && prox == 1) {
+              classe_alerta = "container_alerta container alerta";
+              document.getElementById(`kpi_alerta_info`).innerHTML =
+                "Manter janela fechada e ligar ar-condicionado";
+              document.getElementById(`status_messagem_alerta`).innerHTML =
+                "Condições inadequadas 🚨";
+            } else if(tempFora < 26 && temp >= 26 && prox == 0) {
+              classe_alerta = "container_alerta container alerta";
+              document.getElementById(`kpi_alerta_info`).innerHTML =
+                "Manter janela aberta e evitar uso do ar-condicionado";
+              document.getElementById(`status_messagem_alerta`).innerHTML =
+                "Condições inadequadas 🚨";
+            }  else if(tempFora < 26 && temp >= 26 && prox == 1) {
+              classe_alerta = "container_alerta container alerta";
+              document.getElementById(`kpi_alerta_info`).innerHTML =
+                "Abrir janela e evitar uso do ar-condicionado";
+              document.getElementById(`status_messagem_alerta`).innerHTML =
+                "Condições inadequadas 🚨";
+            } else if (tempFora <= 20 && temp >= 26 && prox == 0) {
+              classe_alerta = "container_alerta container alerta";
+              document.getElementById(`kpi_alerta_info`).innerHTML =
+                "Manter janela aberta e evitar ligar o ar-condicionad";
+              document.getElementById(`status_messagem_alerta`).innerHTML =
+                "Condições inadequadas 🚨";
+            } else if (tempFora <= 20 && temp >= 26 && prox == 1) {
+              classe_alerta = "container_alerta container alerta";
+              document.getElementById(`kpi_alerta_info`).innerHTML =
+                "Abrir janela e evitar ligar o ar-condicionado";
+              document.getElementById(`status_messagem_alerta`).innerHTML =
+                "Condições inadequadas 🚨";
+            } else if (tempFora <= 20 && temp <= 20 && prox == 0) {
+              classe_alerta = "container_alerta container alerta";
+              document.getElementById(`kpi_alerta_info`).innerHTML =
+                "Fechar janela e desligar ar-condicionado (caso ligado)";
+              document.getElementById(`status_messagem_alerta`).innerHTML =
+                "Condições inadequadas 🚨";
+            } else if (tempFora <= 20 && temp <= 20 && prox == 1) {
+              classe_alerta = "container_alerta container alerta";
+              document.getElementById(`kpi_alerta_info`).innerHTML =
+                "Manter janela fechada e desligar ar-condicionado (caso ligado)";
+              document.getElementById(`status_messagem_alerta`).innerHTML =
+                "Condições inadequadas 🚨";
+            } else {
+              classe_alerta = "container_alerta container umidade-ideal";
+              document.getElementById(`kpi_alerta_info`).innerHTML =
+                "Sem alertas";
+              document.getElementById(`status_messagem_alerta`).innerHTML =
+                "Condições adequadas ✅";
+            }
+
+            kpi_alerta.className = classe_alerta;
+
+            setTimeout(() => atualizarInfo(), 2000);
+
+          });
+        } else {
+          console.error("Nenhum dado encontrado ou erro na API");
+        }
+      })
+      .catch(function (error) {
+        console.error(
+          `Erro na obtenção dos dados p/ gráfico: ${error.message}`,
+        );
+      });
+
+  }
+
+</script>
